@@ -8,7 +8,7 @@ const TrendingNews = () => {
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-white mb-4">Latest News</h2>
+      <h2 className="text-xl font-bold text-white mb-4">Currency News</h2>
       <div className="space-y-4">
         {loading && <p className="text-zinc-400">Loading news...</p>}
         {error && <p className="text-red-500">Could not load news.</p>}

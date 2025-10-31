@@ -1,26 +1,39 @@
-// 1. FIXED: Changed from process.env to the correct Vite syntax
-const API_KEY = import.meta.env.VITE_NEWS_API_KEY;
+// 1. Read the API key from your environment variables
+const API_KEY = import.meta.env.VITE_MARKETAUX_API_KEY;
 
-// 2. FIXED: Changed URL to use secure "https" for best practice
-const API_URL = `https://newsapi.org/v2/everything?q=(forex OR currency OR exchange rates)&sortBy=publishedAt&language=en&apiKey=${API_KEY}`;
+// 2. Construct the URL for the Marketaux API
+const searchKeywords = 'forex,currency,"exchange rate"';
+const API_URL = `https://api.marketaux.com/v1/news/all?api_token=${API_KEY}&search=${searchKeywords}&language=en`;
 
 export const getCurrencyNews = async () => {
   if (!API_KEY) {
-    throw new Error("News API Key is missing. Check your .env file.");
+    throw new Error("Marketaux API key is missing. Please check your .env file for VITE_MARKETAUX_API_KEY.");
   }
+
   try {
     const response = await fetch(API_URL);
     if (!response.ok) {
-      // This will likely trigger on Vercel because NewsAPI blocks free keys on live sites.
-      throw new Error(`Network response was not ok. NewsAPI may be blocking requests from live servers on the free plan.`);
+      throw new Error(`Network response was not ok: ${response.status}`);
     }
-    const data = await response.json();
-    if (data.status !== 'ok') {
-      throw new Error(`API Error: ${data.message}`);
-    }
-    return data.articles;
+    const result = await response.json();
+
+    // 3. CRITICAL FIX: Adapt the response data structure.
+    // This loops through the articles from Marketaux and creates a new array
+    // with the correct property names that NewsCard.jsx expects.
+    const adaptedArticles = result.data.map(article => ({
+      title: article.title,
+      description: article.description,
+      url: article.url,
+      // --- This is the translation logic ---
+      urlToImage: article.image_url,      // Translate image_url to urlToImage
+      source: { name: article.source },     // Translate source string to a { name: ... } object
+      publishedAt: article.published_at,    // Translate published_at to publishedAt
+    }));
+
+    return adaptedArticles;
+
   } catch (error) {
-    console.error("Failed to fetch currency news:", error);
+    console.error("Failed to fetch currency news from Marketaux:", error);
     throw error;
   }
 };

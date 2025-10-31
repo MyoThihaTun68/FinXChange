@@ -1,7 +1,7 @@
 // src/hooks/useFetchRates.js
 
 import { useState, useEffect } from 'react';
-import { getLatestRates } from '../services/fixerApi';
+import { getLatestRates } from '../services/freecurrencyAPi';
 
 export const useFetchRates = () => {
   const [data, setData] = useState(null);
