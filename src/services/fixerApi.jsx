@@ -1,35 +1,48 @@
-const API_KEY = import.meta.env.VITE_FIXER_API_KEY;
-
-// 1. Change the URL from 'http' to 'https'
-const API_BASE_URL = 'https://data.fixer.io/api';
+// This file now uses the Frankfurter.app API.
+// It is free, requires NO API KEY, and works everywhere.
+const API_BASE_URL = 'https://api.frankfurter.app';
 
 /**
- * Fetches the latest currency exchange rates from the Fixer API.
+ * Fetches the latest currency exchange rates.
  */
 export const getLatestRates = async () => {
-  if (!API_KEY) {
-    throw new Error("Missing API Key: Please add VITE_FIXER_API_KEY to your .env file.");
-  }
-  
-  // 2. Construct the URL for the secure endpoint
-  const url = `${API_BASE_URL}/latest?access_key=${API_KEY}`;
-  
   try {
-    const response = await fetch(url);
+    // 1. The API call is simple and requires no key.
+    const response = await fetch(`${API_BASE_URL}/latest`);
     if (!response.ok) {
-      throw new Error(`Network Error: ${response.status} ${response.statusText}`);
+      throw new Error(`Network Error: ${response.status}`);
     }
     const data = await response.json();
-    if (!data.success) {
-      // 3. Handle the specific error if HTTPS is not allowed on your plan
-      if (data.error?.code === 105) {
-        throw new Error("HTTPS access is not supported on the free Fixer.io plan. Please use a different API for deployment.");
-      }
-      throw new Error(`Fixer API Error: ${data.error.info} (Code: ${data.error.code})`);
-    }
-    return data;
+
+    // 2. CRITICAL: Adapt the response to match the format our app expects.
+    // Frankfurter's base is EUR, and we must manually add it to the rates list
+    // so it appears in dropdowns and other components.
+    data.rates['EUR'] = 1.0; 
+
+    // Return an object that looks just like the old API response.
+    // This means we don't have to change any other part of our application.
+    return {
+      success: true,
+      base: data.base, // The base is 'EUR'
+      rates: data.rates, // The object with all the currency rates
+    };
+
   } catch (error) {
     console.error("Failed to fetch latest rates:", error);
     throw error;
   }
+};
+
+/**
+ * SIMULATES fetching the daily percentage change for various currencies.
+ * This function can remain as it is for now.
+ */
+export const getDailyChangeData = async () => {
+  const currencies = ['USD', 'JPY', 'GBP', 'AUD', 'CAD', 'CHF', 'CNY', 'MMK', 'THB', 'INR', 'EUR'];
+  const changes = {};
+  currencies.forEach(currency => {
+    const change = (Math.random() - 0.5) * 3;
+    changes[currency] = parseFloat(change.toFixed(2));
+  });
+  return new Promise(resolve => setTimeout(() => resolve(changes), 600));
 };
